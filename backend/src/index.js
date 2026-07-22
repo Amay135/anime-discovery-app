@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import redis from './redisClient.js';
-import { getTopAnime } from './services/jikanService.js';
+import { getTopAnime, searchAnime } from './services/jikanService.js';
 
 const app = express();
 app.use(cors());
@@ -24,6 +24,28 @@ app.get('/api/top', async (_req, res) => {
     res.json(data);
   } catch (err) {
     console.error('GET /api/top error:', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+app.get('/api/search', async (req, res) => {
+  const q = req.query.q?.trim();
+  if (!q) return res.status(400).json({ error: 'Query parameter q is required' });
+
+  try {
+    const cached = await redis.get(`jikan:search:${q}`);
+    if (cached) {
+      console.log(`Cache HIT: jikan:search:${q}`);
+      return res.json(JSON.parse(cached));
+    }
+
+    console.log(`Cache MISS: jikan:search:${q} — fetching Jikan`);
+    const data = await searchAnime(q);
+    await redis.setEx(`jikan:search:${q}`, 300, JSON.stringify(data));
+
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/search error:', err.message);
     res.status(502).json({ error: err.message });
   }
 });
