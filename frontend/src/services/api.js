@@ -11,6 +11,6 @@ async function request(path) {
   return res.json();
 }
 
-export function getTopAnime() { return request('/top'); }
-export function searchAnime(q) { return request(`/search?q=${encodeURIComponent(q)}`); }
+export function getTopAnime(page = 1) { return request(`/top?page=${page}`); }
+export function searchAnime(q, page = 1) { return request(`/search?q=${encodeURIComponent(q)}&page=${page}`); }
 export function getAnimeById(id) { return request(`/anime/${id}`); }

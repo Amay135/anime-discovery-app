@@ -9,17 +9,19 @@ app.use(cors());
 
 const CACHE_TTL = 3600; // 1 jam
 
-app.get('/api/top', async (_req, res) => {
+app.get('/api/top', async (req, res) => {
+  const page = req.query.page || '1';
   try {
-    const cached = await redis.get('jikan:top:anime');
+    const cacheKey = `jikan:top:anime:${page}`;
+    const cached = await redis.get(cacheKey);
     if (cached) {
-      console.log('Cache HIT: jikan:top:anime');
+      console.log(`Cache HIT: ${cacheKey}`);
       return res.json(JSON.parse(cached));
     }
 
-    console.log('Cache MISS: jikan:top:anime — fetching Jikan');
-    const data = await getTopAnime();
-    await redis.setEx('jikan:top:anime', CACHE_TTL, JSON.stringify(data));
+    console.log(`Cache MISS: ${cacheKey} — fetching Jikan`);
+    const data = await getTopAnime(page);
+    await redis.setEx(cacheKey, CACHE_TTL, JSON.stringify(data));
 
     res.json(data);
   } catch (err) {
@@ -56,17 +58,19 @@ app.get('/api/anime/:id', async (req, res) => {
 app.get('/api/search', async (req, res) => {
   const q = req.query.q?.trim();
   if (!q) return res.status(400).json({ error: 'Query parameter q is required' });
+  const page = req.query.page || '1';
 
   try {
-    const cached = await redis.get(`jikan:search:${q}`);
+    const cacheKey = `jikan:search:${q}:${page}`;
+    const cached = await redis.get(cacheKey);
     if (cached) {
-      console.log(`Cache HIT: jikan:search:${q}`);
+      console.log(`Cache HIT: ${cacheKey}`);
       return res.json(JSON.parse(cached));
     }
 
-    console.log(`Cache MISS: jikan:search:${q} — fetching Jikan`);
-    const data = await searchAnime(q);
-    await redis.setEx(`jikan:search:${q}`, 300, JSON.stringify(data));
+    console.log(`Cache MISS: ${cacheKey} — fetching Jikan`);
+    const data = await searchAnime(q, page);
+    await redis.setEx(cacheKey, 300, JSON.stringify(data));
 
     res.json(data);
   } catch (err) {

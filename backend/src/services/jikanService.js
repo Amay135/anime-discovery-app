@@ -52,6 +52,6 @@ async function fetchWithRetry(url, retries = 1) {
   }
 }
 
-export function getTopAnime() { return fetchWithRetry(`${BASE}/top/anime`); }
-export function searchAnime(q) { return fetchWithRetry(`${BASE}/anime?q=${encodeURIComponent(q)}`); }
+export function getTopAnime(page = '1') { return fetchWithRetry(`${BASE}/top/anime?page=${page}`); }
+export function searchAnime(q, page = '1') { return fetchWithRetry(`${BASE}/anime?q=${encodeURIComponent(q)}&page=${page}`); }
 export function getAnimeById(id) { return fetchWithRetry(`${BASE}/anime/${id}`); }
